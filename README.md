@@ -1,2 +1,7 @@
-# r_datamining
-Veri madenciliği doktora ders notları
+## Veri madenciliği doktora ders notları
+
+İstanbul Üniversitesi
+
+Ulaştırma ve Lojstik Fakültesi
+
+...
