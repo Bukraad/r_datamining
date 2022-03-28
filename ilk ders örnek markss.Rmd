@@ -1,0 +1,80 @@
+---
+title: "Veri Tipi Belirleme"
+author: "Bükra Doğaner"
+date: '2022-03-22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+çalışacağımız verisetinin içeri aktarılması için `read.csv`` fonksiyonu kullanılır. 
+içeri aktarcağımız lokal dosya yolu yada uzak sunucuda tutulan dosyanın yolu fonksiyona girdi olarak verilir. 
+
+```{r}
+veriseti <- read.csv("fin500.csv")
+```
+
+veriseti yüklendikten sonra veriseti içeriğini kontrol etmek üzere `head()` ve `tail()` fonksiyonları kullanılır
+
+
+```{r}
+head(veriseti,15)
+
+tail(veriseti,2) 
+```
+verisetinde yer alan dataların yapısını görmek için str fonksiyonu kullanılır
+
+```{r}
+str(veriseti) 
+```
+
+Veriseti içindeki tek bir stünün okunması için veriseti$xx komutu kullanılır. Örnek olarak Industry stünunun görüntülenmesi için 
+
+```{r}
+veriseti$Industry
+```
+
+Verisetine dair özet bilgi için summary() fonksiyonu kullanılır.
+
+```{r}
+summary(veriseti) 
+```
+
+verisetinde yer alan verilerin yapısının değiştirilmesi için veriseti$() <- as.factor(veriseti$veriseti$değişiklik yapılacak sütun) fonksiyonu kullanılır. Verilerin doğru analiz edilmesi için verisetinde yer alan bilgilerin doğru şekilde tanımlanması gerekmektedir. Tüm veriler tek tek incelenerek tanımlaması yapılmalıdır.
+
+```{r}
+veriseti$Industry <- as.factor(veriseti$Industry)
+veriseti$Inception <- as.factor(veriseti$Inception)
+veriseti$State <- as.factor(veriseti$State)
+veriseti$City <- as.factor(veriseti$City)
+veriseti$Revenue <- as.character(veriseti$Revenue)
+```
+
+Verilerin istenilen formata uygun olması için 'veri temizliği' işlemi yapılmalıdır. Bu işlemde gsub() komutu kullanılabilmektedir. Verilerin rakamsal veri olarak algılanması için sayıların sonunda yer alan dolar kelimesinin silinmesi fonksiyonu aşağıdaki gibidir. gsub("çıkarılması gereken değer", "yerine konulacak değer", veriseti$değişiklik yapılacak sütun)
+
+```{r}
+veriseti$Expenses <- gsub(" Dollars", "", veriseti$Expenses)
+veriseti$Expenses <- gsub(",", "", veriseti$Expenses) 
+``` 
+
+işlem kalabalığı olmaması açısından gsub fonksiyonunun kullanıldığı işlemi aşağıdaki şekilde birleştirmek mümkündür. 
+
+```{r}
+veriseti$Growth <- as.numeric(gsub("%", "", veriseti$Growth))
+``` 
+
+Verilerde yer alan $ gibi R programında bir anlam ifade eden karakterlerle ilgili işlem yapılacağı zaman başına \\ koyularak karakterin programda bir anlam ifade etmediği tanımlanır.
+
+```{r}
+veriseti$Revenue <- gsub("\\$","", veriseti$Revenue)
+``` 
+
+
+verilerin son durumu aşağıdaki gibidir.
+
+```{r}
+str(veriseti)
+```
+
