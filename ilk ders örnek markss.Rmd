@@ -78,3 +78,5 @@ verilerin son durumu aşağıdaki gibidir.
 str(veriseti)
 ```
 
+'rerwre'
+
