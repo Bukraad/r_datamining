@@ -1,4 +1,3 @@
-veriseti <- read.csv("fin500.csv")
 
 veriseti <- read.csv("https://bahadirfyildirim.com/media/documents/Fin500.csv", na.strings = c("")) #veriseti aktarÄ±lÄ±rken oluÅŸan boÅŸluklarÄ±n silinip yerine NA geliyor 
 
@@ -19,7 +18,7 @@ veriseti$State <- as.factor(veriseti$State)
 
 veriseti$Expenses <- gsub(" Dollars", "", veriseti$Expenses)  #dolar kelimesini atacak Sub'ta ilk gÃ¶rdÃ¼ÄŸÃ¼nÃ¼ arar gsub'ta verilen argÃ¼manÄ± komple arar
 veriseti$Expenses <- gsub(",", "", veriseti$Expenses)         #virgÃ¼lÃ¼ sildik
-veriseti$expenses <- as.numeric(veriseti$Expenses)            #numeric veri haline getirdik
+veriseti$Expenses <- as.numeric(veriseti$Expenses)            #numeric veri haline getirdik
 
 veriseti$Growth <- as.numeric(gsub("%", "", veriseti$Growth)) #yukarÄ±daki iki iÅŸlemi bu ÅŸekilde birleÅŸtirebilirsin
 
@@ -45,7 +44,6 @@ veriseti[3,]  #3. satÄ±rÄ±n tamamÄ±nÄ± gÃ¶zlemleme
 
 
 veriseti[!complete.cases(veriseti),]    #sorgunun baÅŸÄ±na ! koyarsan olumsuzlama demektir !true= false
-
 
 
 which(veriseti$Revenue == 9746272)   #which komutu hangi revenue deÄŸerinin 9746272 olduÄŸunu gÃ¶sterir
@@ -95,14 +93,100 @@ veriseti[is.na(veriseti$Employees), ]         #NA olanlarÄ± Ã§ek
 
 
 median (veriseti[, "Employees"], na.rm = T) #NA'leri T yaptÄ±k
-
 med_emp_ret <- median(veriseti[veriseti$Industry == "Retail", "Employees"], na.rm = T) #OrtalamayÄ± kenarda values kÄ±smÄ±na attÄ±
 
 veriseti[is.na(veriseti$Employees) & (veriseti$Industry) == "Retail", "Employees"] <- med_emp_ret
 veriseti[3,] #kontrol etmek iÃ§in
 
-med_emp_finser <- median(veriseti[veriseti&Industry == "Financial Services" , "Employees"], na.rm = T)    #bu neden olmadÄ± kontrol et
-veriseti[is.na(veriseti$Employees) & data$Industry == "Financial Services" , "Employees"] <- med_emp_finser
+med_emp_finservices <- median(veriseti[veriseti$Industry == "Financial Services", "Employees"], na.rm = T)   #bu neden olmadÄ± kontrol et
+veriseti[is.na(veriseti$Employees) & veriseti$Industry == "Financial Services" , "Employees"] <- med_emp_finservices 
 
 
 #revenue iÃ§in sektÃ¶r ortalamasÄ±nÄ± al yaz, expense iÃ§in al yaz yada expenses iÃ§in aldÄ±ÄŸÄ±nÄ± gÃ¶zlemle doldur growth iÃ§in de doldur
+
+veriseti[is.na(veriseti$Revenue), ]  
+med_rev_constr <- median(veriseti[veriseti$Industry == "Construction", "Revenue"], na.rm = T) 
+veriseti[is.na(veriseti$Revenue) & veriseti$Industry == "Construction", "Revenue"] <- med_rev_constr
+
+veriseti[is.na(veriseti$Expenses), ]
+med_exp_constr <- median(veriseti[veriseti$Industry == "Construction", "Expenses"], na.rm = T) 
+veriseti[is.na(veriseti$Expenses) & veriseti$Industry == "Construction", "Expenses"] <- med_rev_constr
+
+med_exp_itservices <- median(veriseti[veriseti$Industry == "IT Services", "Expenses"], na.rm = T) 
+veriseti[is.na(veriseti$Expenses) & veriseti$Industry == "IT Services", "Expenses"] <- med_exp_itservices
+
+veriseti[is.na(veriseti$Growth), ]
+med_growth_constr <- median(veriseti[veriseti$Industry == "Construction", "Growth"], na.rm = T) 
+veriseti[is.na(veriseti$Growth) & veriseti$Industry == "Construction", "Growth"] <- med_growth_constr
+
+veriseti[is.na(veriseti$Profit), ]
+med_profit_constr <- median(veriseti[veriseti$Industry == "Construction", "Profit"], na.rm = T) 
+veriseti[is.na(veriseti$Profit) & veriseti$Industry == "Construction", "Profit"] <- med_profit_constr
+
+summary(veriseti)
+
+veriseti[is.na(veriseti$Profit) & !is.na(veriseti$Revenue), "Profit"] <- veriseti[is.na(veriseti$Profit) & !is.na(veriseti$Revenue), "Revenue"] - veriseti[is.na(veriseti$expenses) & !is.na(veriseti$Revenue), "Expenses"] 
+#yukarıda profiti doldurmak için revenue'dan expenses'i çıkardık ve profiti bulduk
+
+
+veriseti[is.na(veriseti$Profit) , ]  #profitte na olan veri var mı kontrolü 
+
+library(caret)
+data(iris)   #üç tip bitki sınıflanmış onun verileri çanakları taç yaprakları falan filan bu veriler üzerinden prediction yapacağız. iris prediction için temel veriseti. İris ile benchmarking yapılıyor insanlar kendi verileriyle doğruluğunu kıyaslıyor
+str(iris)
+
+summary(iris[ ,1:4]) #1'den 4'e kadar olan sütunlardaki tüm satır verileri. Veriseti[ ,c(1,3,5)] ise 1. 3. ve 5. kolonları sadece alır
+
+#alttaki kısma  ?preProcess yazıp run ederek preprecess ne işe yarıyor onu okuyabilirsin.
+
+
+preProcessParams <- preProcess(iris[ ,1:4], method='scale') #scale tüm gözlem değerleri için o serinin standart sapmasına oranlıyor. bunun açıklaması için rmd'de formül şeysi yazdım
+
+print(preProcess)
+
+scaled <- predict(preProcessParams, iris[ ,1:4])
+
+summary(scaled) #scale edilen yeni verisetinin özet bilgileri
+
+#center işlemi her bir gözlem için ortalamayı hesaplıyor ve bu ortalamayı her bir değerden çıkarıyor x{i}-\bar{X}_{x} alt x olmasının nedeni her bir sütunun ortalamasını alıyor
+
+preProcessParams <- preProcess(iris[ ,1:4], method='center')
+
+centered <- predict(preprocessParams, iris[ ,1:4])
+
+preprocessParams <- preProcess(iris[ ,1:4], method='center','scale')
+standardized <- predict(preProcessParams, iris[ ,1:4])
+
+#range normalizasyon
+
+preProcessParams <- preProcess(iris[ ,1:4], method='range')
+
+normalized <- predict(preprocessParams, iris[ ,1:4])
+
+summary(normalized)
+
+#boxcox özellikle çarpık verilerde çarpıklığı gideriyor
+
+preProcessParams <- preProcess(iris[ ,1:4], method='BoxCox')
+boxcox <- predict(preprocessParams, iris[ ,1:4])
+
+print(preProcessParams)  #boxcox içerisinde uygun lambda değerlerini bulmuştuk boxcox ile bu formül de onu gösteriyor her sütun için ayrı tabii en idealini buldu
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

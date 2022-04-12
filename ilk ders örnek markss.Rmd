@@ -78,4 +78,17 @@ verilerin son durumu aşağıdaki gibidir.
 str(veriseti)
 ```
 
+"İkinci Ders"
 
+alttaki scale formülü
+$$  
+\frac{X{i}}{\sigma{x}}
+$$
+center formülü
+$$
+x{i}-\bar{X}_{x}
+$$
+
+\frac{x-min}\left (x \right)}{} diye devam eden formül range formülü normalized onu fotodan bak
+
+boxcox formülü çoook uzun olan birkaç satır fotodan bak
