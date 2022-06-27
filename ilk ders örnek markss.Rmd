@@ -52,7 +52,7 @@ veriseti$City <- as.factor(veriseti$City)
 veriseti$Revenue <- as.character(veriseti$Revenue)
 ```
 
-Verilerin istenilen formata uygun olması için 'veri temizliği' işlemi yapılmalıdır. Bu işlemde gsub() komutu kullanılabilmektedir. Verilerin rakamsal veri olarak algılanması için sayıların sonunda yer alan dolar kelimesinin silinmesi fonksiyonu aşağıdaki gibidir. gsub("çıkarılması gereken değer", "yerine konulacak değer", veriseti$değişiklik yapılacak sütun)
+Verilerin istenilen formata uygun olması için _veri temizliği_ işlemi yapılmalıdır. Bu işlemde gsub() komutu kullanılabilmektedir. Verilerin rakamsal veri olarak algılanması için sayıların sonunda yer alan dolar kelimesinin silinmesi fonksiyonu aşağıdaki gibidir. gsub("çıkarılması gereken değer", "yerine konulacak değer", veriseti$değişiklik yapılacak sütun)
 
 ```{r}
 veriseti$Expenses <- gsub(" Dollars", "", veriseti$Expenses)
@@ -65,30 +65,224 @@ işlem kalabalığı olmaması açısından gsub fonksiyonunun kullanıldığı 
 veriseti$Growth <- as.numeric(gsub("%", "", veriseti$Growth))
 ``` 
 
-Verilerde yer alan $ gibi R programında bir anlam ifade eden karakterlerle ilgili işlem yapılacağı zaman başına \\ koyularak karakterin programda bir anlam ifade etmediği tanımlanır.
+Verilerde yer alan $ gibi R programında bir anlam ifade eden karakterlerle ilgili işlem yapılacağı zaman başına "\\" koyularak karakterin programda bir anlam ifade etmediği tanımlanır.
 
 ```{r}
 veriseti$Revenue <- gsub("\\$","", veriseti$Revenue)
 ``` 
 
 
-verilerin son durumu aşağıdaki gibidir.
 
-```{r}
-str(veriseti)
-```
+## Normalizasyon İşlemleri
 
-"İkinci Ders"
+### Parametreler kullanılarak verisetinin dönüştürülmesi
 
-alttaki scale formülü
+
+_Scale Yöntemi_
+
 $$  
 \frac{X{i}}{\sigma{x}}
 $$
-center formülü
+
+_Center Yöntemi_
+
 $$
 x{i}-\bar{X}_{x}
 $$
 
-\frac{x-min}\left (x \right)}{} diye devam eden formül range formülü normalized onu fotodan bak
+__Range Normalizasyon__
 
-boxcox formülü çoook uzun olan birkaç satır fotodan bak
+$$
+\frac{x_{i}-\mu_{x}}{\sigma_{x}}
+$$
+
+
+## Cross Validation
+
+Bootstrap yöntemi ile 100 verilik örneklem oluşturduk. 
+
+```{r}
+train_control <- trainControl(method="boot", number = 100)
+```
+
+### test/ split method
+
+library(caret)
+
+data(iris)
+
+Test ve train bölüm oranını belirlenir
+```{r} 
+split=0.80
+```
+
+Train için kullanılacak veriler %80'lik kısımı oluşturmaktadır. Bu veriler trainIndex olarak tanımlanmıştır
+
+```{r}
+data_train <- iris[trainIndex,]  
+data_train <- iris[-trainIndex,]  
+```
+
+### Leave one out cross validation LOOCV 
+
+library(caret)
+data(iris)
+
+__define training cont__
+
+```{r}
+train_control <- trainControl(method = "LOOCV")
+```
+
+### K-Fold Cross Validation
+
+
+__k fold number -> number__
+
+```{r}
+train_control <- trainControl(method="cv", number=10)
+```
+
+### Repeated Cross Validation
+
+```{r}
+train_control <- trainControl(method = "repeatedcv" , number=10, repeats=3)
+```
+
+# Regresyon Analizi
+
+1. Rastgele seçilecek örneklemleri sabit bir sayıda tutabilmek için 'seed' sayısı belirlenir. Bunun için aşağıda belirtilen komut kullanılır.
+
+```{r}
+set.seed(...)
+```
+
+2. Verisetinin train ve test olarak parçalanması için gerekli komutlar girilir. Parçalanma oranı ve veriler bu komutta belirtilir. Uygulamada kullanılan verisetinde parçalama oranı %75'tir.
+
+```{r}
+sample_size <- floor(0.75 * nrow(Boston))
+```
+
+3. Train ve test verilerinin tanımlanması yapılır.
+
+```{r}
+train <- Boston[training_index, ]
+test <- Boston[-training_index, ]
+```
+
+## Ridge Regresyon
+
+
+Çok değişkenli regresyon verilerini analiz etmede kullanılmaktadır. Amaç hata kareler toplamını minimize eden katsayıları, bu katsayılara bir ceza uygulayarak bulmaktır. Over-fittinge karşı dirençlidir. Çok boyutluluğa çözüm sunar. Tüm değişkenler ile model kurar, ilgisiz değişkenleri çıkarmaz sadece katsayılarını sıfıra yaklaştırır. Modeli kurarken alpha (ceza) için iyi bir değer bulmak gerekir.
+
+Aşağıda Ridge Regresyon çözümü için uygulama örneği verilmiştir. Örnek çözümde Alfa katsayısı 0 olarak belirtilmiştir. X bağımsız değişken, Y ise bağımlı değişkendir.
+```{r}
+cv.r <- cv.glmnet(x, y, alpha = 0)
+```
+
+Daha sonra CV ile lambda'nın minimum değeri belirlenmiştir.
+```{r}
+cv.r$lambda.min
+```
+
+Ardından lambda'nın minimum değeri modele girdi olarak eklenmiştir. 
+```{r}
+model.ridge <- glmnet(x, y, alpha = 0, lambda = cv.r$lambda.min)
+```
+
+Modelin coefficient değerlerine bakılmıştır.
+```{r}
+coef(model.ridge)
+```
+
+Daha sonra test verisi oluşturduk ve oluşturulan test verisi ile predict değerleri kullanılmıştır. Bulunan sonuçlar vektör olarak kullanılmıştır.
+```{r}
+x.test.ridge <- model.matrix(medv ~., test)[,-1]
+predictions.ridge <- model.ridge %>% predict(x.test.ridge) %>% as.vector()
+```
+
+Predict değerleri ile modelde elde edilen verilerin kıyaslanması için RMSE komutu kullanılmaktadır. Böylece regresyonda elde edilen sonucun sağlaması yapılacaktır.
+
+```{r}
+data.frame( RMSE.r = RMSE(predictions.ridge, test$medv), Rsquare.r = R2(predictions.ridge, test$medv))
+```
+
+
+## Lasso Regresyon Analizi
+
+Lasso (Least Absolute Shrinkage and Selection Operator) Regresyon, en küçük kareler(EKK) yöntemine alternatif yanlı tahmin yöntemlerinden biridir. Lasso Regresyon, hem değişken seçiminin hem de regularizasyonun aynı anda gerçekleştiği bir regresyon tekniğidir. Etkili ve hızlı olması nedeniyle büyük veri setlerinde yaygın olarak uygulanmaktadır.
+EKK modelinin kurulamayacağı kadar az gözlem sayısının olduğu durumlarda, çapraz doğrulama ve ceza parametresi sayesinde, model kurabilmesi nedeniyle sıkça kullanılmaktadır.
+
+Lasso Regresyon; ürettiği modelin tahmin doğruluğunu ve yorumlanabilirliğini arttırmak için hem değişken seçimi hem de regularization yapmaktadır. Amaç hata kareler toplamını minimize eden katsayıları, katsayılara ceza uygularayarak bulmaktır.
+
+Ridge Regresyon ile Lasso Regresyon’nun çalışma yöntemi birbiri ile çok benzerdir. Her ikisi de bir ceza parametresi ile yanlı ancak düşük varyanslı modeller kurar. Formüllerinde ufak bir farklılık vardır. Ridge Regresyon ceza parametresi olarak lambda katsayının karesi’ni kullanır. Lasso Regresyon ise lambda katsayının mutlak değerini kullanır.Ridge Regresyon’da herhangi bir parametre sıfıra eşitlenmez, yani değişken seçimi yapmaz. Lasso Regresyon bu özelliği ile daha sade ve yorumlanabilir modeller sunar.
+
+
+Aşağıda Ridge Regresyon çözümü için uygulama örneği verilmiştir. Örnek çözümde Alfa katsayısı 1 olarak belirtilmiştir. X bağımsız değişken, Y ise bağımlı değişkendir.
+```{r}
+cv.l <- cv.glmnet(x, y, alpha = 1)
+```
+
+Ridge Regresyonda olduğu gibi önce lambda'nın minimum değeri belirlenmiştir. Daha sonra minimum değer modele eklenerek coefficient değerlerine bakılmıştır. Test ve Tahmin değerleri de belirlendikten sonra sonuçların kıyaslanması için RMSE komutu kullanılmıştır.
+```{r}
+cv.l$lambda.min
+model.lasso <- glmnet(x, y, alpha = 1 , lambda = cv.l$lambda.min)
+coef(model.lasso)
+x.test.lasso <- model.matrix(medv ~., test)[,-1] 
+predictions.lasso <- model.lasso %>% predict(x.test.lasso) %>% as.vector()
+data.frame( RMSE.r = RMSE(predictions.lasso, test$medv), Rsquare.r = R2(predictions.lasso, test$medv))
+```
+
+## Elastic Net Regression
+
+Elastic Net, Ridge Regresyonu ve Lasso Regresyonu arasında bir orta yoldur. Düzenlileştirme terimi hem Ridge hem de Lasso’nun düzenlileştirme terimlerinin basit bir karışımıdır ve karışım oranı 𝑟 katsayısı ile kontrol edilebilmektedir. 𝑟 = 0 olduğunda, Elastic Net, Ridge Regresyonuna eşdeğerdir ve 𝑟 = 1 olduğunda ise Lasso Regresyonuna eşdeğerdir. Elastik Net Regresyonu, Lasso ve Ridge Regresyonlarının güçlü yönlerini birleştirerek, düzenlileştirilmiş değişkenlerle ilişkili parametreleri gruplandırıp küçülterek onları denklemde bırakmakta veya hepsini bir kerede kaldırmaktadır. Bundan dolayı, birbiriyle ilişkili birden fazla özellik olduğunda kullanışlıdır. Lasso bunlardan sadece birini rastgele seçmektedir. Elastik-net ise ikisini birden seçmektedir. 
+
+Aşağıda dataset üzerinden bir model oluşturduk.
+```{r}
+model.net <- train(
+  medv~., data = train, method ="glmnet", 
+  trControl = trainControl("cv", number=10), 
+  tuneLength=10)
+model.net$bestTune
+```
+
+Ardından oluşturulan modelin coefficient değerlerine baktık.
+
+```{r}
+coef(model.net$finalModel, model.net$bestTune$lambda)
+```
+
+Alphanın yüzde 20 ridgenin yüzde 80 katkısı olcak diye bulduk
+```{r}
+x.test.net <- model.matrix(medv ~., test)[,-1]
+predictions.net <- model.net %>% predict(x.test.net)
+```
+
+Predict değerleri ile modelde elde edilen verilerin kıyaslanması için RMSE komutu kullanılmaktadır. Böylece regresyonda elde edilen sonucun sağlaması yapılacaktır.
+```{r}
+data.frame( RMSE.r = RMSE(predictions.net, test$medv), Rsquare.r = R2(predictions.net, test$medv))
+```
+
+## Geleneksel Model
+
+Klasik olarak test ve train verilerinin ayrımı yapılmıştır.
+
+```{r}
+trainingRowIndex = sample(1:nrow(dataset), 0,8*nrow(dataset))
+train = dataset[trainingRowIndex,2:5]
+test = dataset[-trainingRowIndex, 2:5]
+```
+
+Model oluşturulmuştur.
+```{r}
+model1 = glm(y~x1+x2, family = "binomial", data = dataset)
+``` 
+
+Modelin AIC değerinin ölçümü için null be deviance değerleri hesaplanmıştır. 
+```{r}
+ll.null = model1$null.deviance/-2 
+ll.proposed = model1$deviance/-2
+R2 = (ll.null - ll.proposed) / ll.null
+``` 
+
+
